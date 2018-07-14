@@ -1,34 +1,24 @@
-class User {
-	constructor(id, name) {
-		this.id = id;
-		this.name = name;
-	}
-}
-
-let users = [];
+// var ObjectId = require('mongodb').ObjectId;
 
 module.exports = {
-	allUsers () {
-		return users;
+	allUsers (db) {
+		return db.collection("users").find({});
 	},
 
-	newUser (data) {
-		return new User(Date.now(), data.name);
+	newUser (db, name) {
+		db.collection("users").insertOne({'_id': Date.now(), 'name': name});
 	},
 
-	findUser (id) {
-		return users.find(user => user.id == id);
+	findUser (db, id) {
+		// var id = new ObjectId(id);
+		return db.collection("users").find({_id: Number(id)})
 	},
 
-	addUser (user) {
-		users.push(user);
+	deleteUser (db, id) {
+		db.collection("users").remove({"_id": Number(id)})
 	},
 
-	deleteUser (id) {
-		users = users.filter(user => user.id !== id);
-	},
-
-	updateUser (id, name) {
-		module.exports.findUser(id).name = name;
+	updateUser (db, id, name) {
+		db.collection("users").updateOne({"_id": Number(id)},{ $set: {'name': name}});
 	}
 };

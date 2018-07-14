@@ -1,40 +1,26 @@
-class Message {
-	constructor (id, sender, receiver, text) {
-		this.id = id;
-		this.sender = sender;
-		this.receiver = receiver;
-		this.text = text;
-	}
-}
-
-let messages = [];
-
 module.exports = {
-	allMessages () {
-		return messages;
+	allMessages (db) {
+		return db.collection("messages").find({});
 	},
 
-	newMessage (data) {
-		return new Message(Date.now(), data.sender, data.receiver, data.text);
+	newMessage (db, text, senderId, recieverId) {
+		db.collection("messages").insertOne({'_id': Date.now(), 'text': text, 
+			'senderId': senderId, 'recieverId': recieverId });
 	},
 
-	findMessage (id) {
-		return messages.find(message => message.id == id);
+	findMessage (db, id) {
+		return db.collection("messages").find({_id: Number(id)});
 	},
 
-	findSender (sender) {
-		return messages.filter(message => message.sender == sender);
+	findSender (db, sender) {
+		return db.collection("messages").find({"senderId": sender});
 	},
 
-	addMessage (message) {
-		messages.push(message);
+	deleteMessage (db, id) {
+		db.collection("messages").remove({"_id": Number(id)});
 	},
 
-	deleteMessage (id) {
-		messages = messages.filter(message => message.id !== id);
-	},
-
-	updateMessage (id, text) {
-		module.exports.findMessage(id).text = text;
+	updateMessage (db, id, text) {
+		db.collection("messages").updateOne({"_id": Number(id)},{ $set: {'text': text}});
 	}
 };

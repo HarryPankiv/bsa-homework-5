@@ -1,55 +1,57 @@
 const app = require('express')();
 const userService = require('../services/user');
-const messageService = require('../services/message');
+const mongoClient = require("mongodb").MongoClient;
 
-app.get('/all', (req, res, next) => {
+const url = "mongodb://localhost:27017/bsaDB";
+
+app.get('/all', (req, res) => {
 	try {
-		res.data = userService.allUsers();
-		res.json(res.data);
+		mongoClient.connect(url, function(err, database){
+			userService.allUsers(database.db()).toArray( function(err, data) {
+				res.send(data);
+			});
+		});
 	} catch (error) {
 		res.sendStatus(400);
 		res.end();
 	}
 });
 
-app.get('/:id', (req, res, next) => {
+app.get('/:id', (req, res) => {
 	try {
-		res.data = userService.findUser(Number(req.params.id));
-		res.json(res.data);
+		mongoClient.connect(url, function(err, database){
+			userService.findUser(database.db(), req.params.id).toArray( function(err, data) {
+				res.send(data[0]);
+			});;
+		})
 	} catch (error) {
 		res.sendStatus(400);
 		res.end();
 	}
 });
 
-app.get("/:id/dialogs", (req, res, next) => {
+app.post("/", (req, res) => {
 	try {
-		let dialogs = messageService.findSender(Number(req.params.id));
-		let dialogsIds = dialogs.map(dialog => dialog.receiver);
-		let speakers = dialogsIds.map(user => userService.findUser(user));
-		res.json(speakers);
+		mongoClient.connect(url, function(err, database){
+			userService.newUser(database.db(), req.body.name);
+			userService.allUsers(database.db()).toArray( function(err, data) {
+				res.send(data);
+			});
+		})
 	} catch (error) {
 		res.sendStatus(400);
 		res.end();
 	}
 });
 
-app.post("/", (req, res, next) => {
+app.put('/:id', (req, res) => {
 	try {
-		let user = userService.newUser(req.body);
-		userService.addUser(user);
-		res.data = user;
-		res.json(res.data);
-	} catch (error) {
-		res.sendStatus(400);
-		res.end();
-	}
-});
-
-app.put('/:id', (req, res, next) => {
-	try {
-		res.data = userService.updateUser(Number(req.params.id), req.body);
-		res.sendStatus(200);
+		mongoClient.connect(url, function(err, database){
+			userService.updateUser(database.db(), req.params.id, req.body.name);
+			userService.allUsers(database.db()).toArray( function(err, data) {
+				res.send(data);
+			});
+		})
 	} catch (error) {
 		res.sendStatus(400);
 		res.end();
@@ -57,10 +59,14 @@ app.put('/:id', (req, res, next) => {
 });
 
 
-app.delete('/:id', (req, res, next) => {
+app.delete('/:id', (req, res) => {
 	try {
-		userService.deleteUser(Number(req.params.id));
-		res.sendStatus(200);
+		mongoClient.connect(url, function(err, database){
+			userService.deleteUser(database.db(), req.params.id);
+			userService.allUsers(database.db()).toArray( function(err, data) {
+				res.send(data);
+			});
+		})
 	} catch (error) {
 		res.sendStatus(400);
 		res.end();
